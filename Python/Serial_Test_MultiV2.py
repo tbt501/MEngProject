@@ -8,7 +8,7 @@ run = '1'
 count = 0
 badSamples = 0
 NO_SAMPLES = 1000
-NO_SENSORS = 3
+NO_SENSORS = 5
 START = 'S'
 
 HEADER = [ ['Sensor 1',' ',' ','Sensor 2',' ',' ','Sensor 3',' ',' ','Sensor 4',' ',' ','Sensor 5'],
@@ -16,8 +16,6 @@ HEADER = [ ['Sensor 1',' ',' ','Sensor 2',' ',' ','Sensor 3',' ',' ','Sensor 4',
 
 data_log = []
 length = []
-
-#sensorValues = np.zeroes( (NO_SENSORS, NO_SAMPLES, AXES), dtype=np.int16 )
 
 try:
     arduinoSerial = serial.Serial('/dev/tty.usbserial-DN018OOF',9600, 5) #Create Serial port object called arduinoSerialData
