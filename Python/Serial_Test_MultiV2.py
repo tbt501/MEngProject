@@ -17,8 +17,6 @@ HEADER = [ ['Sensor 1',' ',' ','Sensor 2',' ',' ','Sensor 3',' ',' ','Sensor 4',
 data_log = []
 length = []
 
-#sensorValues = np.zeroes( (NO_SENSORS, NO_SAMPLES, AXES), dtype=np.int16 )
-
 try:
     arduinoSerial = serial.Serial('/dev/tty.usbserial-DN018OOF',9600, 5) #Create Serial port object called arduinoSerialData
     print("Connected to Arduino")
