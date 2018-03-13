@@ -7,12 +7,19 @@ import numpy as np
 run = '1'
 count = 0
 badSamples = 0
-NO_SAMPLES = 5000
+NO_SAMPLES = 25
 NO_SENSORS = 5
+NO_AXES = 3
 START = 'S'
 
 HEADER = [ ['Sensor 1',' ',' ','Sensor 2',' ',' ','Sensor 3',' ',' ','Sensor 4',' ',' ','Sensor 5'],
            ['X','Y','Z','X','Y','Z','X','Y','Z','X','Y','Z','X','Y','Z'] ]
+
+CONVERSION = [ [101.6879,101.7174,101.7665,-4.9693,-5.0167,-5.0736],
+               [99.9355,101.946,102.7925,-5.0840,-4.9925,-5.0007],
+               [102.498,103.065,104.0235,-4.9416,-4.9001,-4.9225],
+               [99.842,101.169,100.999,-5.0621,-5.0204,-5.1243],
+               [100.052,102.312,101.709,-5.8678,-4.8937,-5.1263] ]
 
 data_log = []
 length = []
@@ -72,6 +79,12 @@ for i in range(2,NO_SENSORS+1):
     np_temp = np_data_log[:,[1,2,3]][np_data_log[:,0] == i ]
     np_data_sorted = np.concatenate((np_data_sorted,np_temp), axis=1)
 
+np_data_g = np_data_sorted.astype(np.float16)
+
+for i in range(0,NO_SENSORS):
+    for j in range(0,NO_AXES):
+        np_data_g[:,j+(3*i)] = ((np_data_g[:,j+(3*i)]/CONVERSION[i][j]) + CONVERSION[i][j+3])
+
 timestamp = datetime.datetime.utcnow()
 pathTime = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensor1log-{:%d%b,%H.%M}.csv'.format(timestamp)
 
@@ -80,10 +93,10 @@ path = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensorlog.c
 name = 'Sensor5(X-0g,Y-1g,Z-0g)'
 pathName = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/'+name+'.csv'
 
-with open(pathName, 'w') as csv_file:
+with open(path, 'w') as csv_file:
     csv_write = csv.writer(csv_file, dialect='excel')
     csv_write.writerows(HEADER)
-    csv_write.writerows(np_data_sorted)
+    csv_write.writerows(np_data_g)
 
 
 
