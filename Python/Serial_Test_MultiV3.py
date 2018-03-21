@@ -7,8 +7,8 @@ import numpy as np
 run = '1'
 count = 0
 badSamples = 0
-NO_SAMPLES = 25
-NO_SENSORS = 5
+NO_SAMPLES = 1000
+NO_SENSORS = 1
 NO_AXES = 3
 START = 'S'
 
@@ -90,10 +90,10 @@ pathTime = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensor1
 
 path = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensorlog.csv'
 
-name = 'Sensor5(X-0g,Y-1g,Z-0g)'
+name = 'Sensor6(X-1g,Y-0g,Z-0g)'
 pathName = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/'+name+'.csv'
 
-with open(path, 'w') as csv_file:
+with open(pathName, 'w') as csv_file:
     csv_write = csv.writer(csv_file, dialect='excel')
     csv_write.writerows(HEADER)
     csv_write.writerows(np_data_g)

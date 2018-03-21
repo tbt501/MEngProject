@@ -8,7 +8,7 @@ run = '1'
 count = 0
 badSamples = 0
 NO_SAMPLES = 1000
-NO_SENSORS = 5
+NO_SENSORS = 1
 START = 'S'
 
 HEADER = [ ['Sensor 1',' ',' ','Sensor 2',' ',' ','Sensor 3',' ',' ','Sensor 4',' ',' ','Sensor 5'],
