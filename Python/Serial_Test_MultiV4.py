@@ -3,6 +3,7 @@ import time
 import datetime
 import csv
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def collect_samples(serialPort,NO_SAMPLES,log):
@@ -147,10 +148,40 @@ def save_as_csv(path,data,NO_SENSORS):
         csv_write.writerows(HEADER)
         csv_write.writerows(data)
 
+def plot_multifig(data,NO_SENSORS):
+    
+    # Plots a seperate graph for each sensor
+    for i in range(0,NO_SENSORS):
+        plt.figure(i + 1)
+        plt.title('Sensor ' + str(i + 1))
+        plt.plot(data[:,(0 + (3 * i))],label='X Axis')
+        plt.plot(data[:,(1 + (3 * i))],label='Y Axis')
+        plt.plot(data[:,(2 + (3 * i))],label='Z Axis')
+        plt.ylim(-3,3)
+        plt.xlabel('Sample Index')
+        plt.ylabel('Acceleration/g')
+        plt.legend()
+        plt.show()
+    
+def plot_singlefig(data,NO_SENSORS):
+    
+    # Plots graphs for each sensor on 1 figure
+    plt.figure(1)
+    for i in range(0,NO_SENSORS):
+        plt.subplot(231 + i)
+        plt.plot(data[:,(0 + (3 * i))],label='X Axis')
+        plt.plot(data[:,(1 + (3 * i))],label='Y Axis')
+        plt.plot(data[:,(2 + (3 * i))],label='Z Axis')
+        plt.ylim(-3,3)
+        plt.xlabel('Sample Index')
+        plt.ylabel('Acceleration/g')
+        plt.legend()
+    plt.show()
+
 def main():
     
-    NO_SAMPLES = 10
-    NO_SENSORS = 3
+    NO_SAMPLES = 100
+    NO_SENSORS = 2
 
     data_log = []
 
@@ -211,6 +242,11 @@ def main():
 
     # Save the given data to Excel CSV
     save_as_csv(path,np_data_g,NO_SENSORS)
+
+    # plot_multifig(np_data_g,NO_SENSORS)
+    plot_singlefig(np_data_g,NO_SENSORS)
+
+
 
 main()
 
