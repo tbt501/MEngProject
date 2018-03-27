@@ -1,23 +1,23 @@
 
 
-const int sensor1x = A0;
-const int sensor1y = A1;
-const int sensor1z = A2;
-const int sensor2x = A3;
-const int sensor2y = A4;
-const int sensor2z = A5;
+const int sensor4x = A0;
+const int sensor4y = A1;
+const int sensor4z = A2;
+const int sensor1x = A3;
+const int sensor1y = A4;
+const int sensor1z = A5;
 const int sensor3x = A7;
 const int sensor3y = A8;
 const int sensor3z = A9;
-const int sensor4x = A10;
-const int sensor4y = A11;
-const int sensor4z = A12;
-const int sensor5x = A13;
-const int sensor5y = A14;
-const int sensor5z = A15;
+const int sensor5x = A10;
+const int sensor5y = A11;
+const int sensor5z = A12;
+const int sensor2x = A13;
+const int sensor2y = A14;
+const int sensor2z = A15;
 
 // Variables
-const int NO_OF_SENSORS = 2;
+const int NO_OF_SENSORS = 5;
 const int sensorInfo[5][3] = { {sensor1x,sensor1y,sensor1z},
                                {sensor2x,sensor2y,sensor2z},
                                {sensor3x,sensor3y,sensor3z},
