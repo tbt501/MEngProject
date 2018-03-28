@@ -108,11 +108,11 @@ def ADC_to_g(np_data,NO_SENSORS):
     """
 
     # CONVERSION holds the m and b values calculated during calibration for the X,Y and Z axes of each Sensor.
-    CONVERSION = [ [101.6879,101.7174,101.7665,-4.9693,-5.0167,-5.0736],    # [ [mX1,mY1,mZ1,bX1,bY1,bZ1],
-                   [99.9355,101.946,102.7925,-5.0840,-4.9925,-5.0007],      #   [mX2,mY2,mZ2,bX2,bY2,bZ2],
-                   [102.498,103.065,104.0235,-4.9416,-4.9001,-4.9225],      #   [mX3,mY3,mZ3,bX3,bY3,bZ3],
-                   [99.842,101.169,100.999,-5.0621,-5.0204,-5.1243],        #   [mX4,mY4,mZ4,bX4,bY4,bZ4],
-                   [100.052,102.312,101.709,-5.8678,-4.8937,-5.1263] ]      #   [mX5,mY5,mZ5,bX5,bY5,bZ5] ]
+    CONVERSION = [ [102.006,101.074,103.061,-4.990,-5.025,-5.171],    # [ [mX1B,mY1B,mZ1B,bX1B,bY1B,bZ1B],
+                   [99.936,101.946,102.793,-5.084,-4.993,-5.001],     #   [mX2,mY2,mZ2,bX2,bY2,bZ2],
+                   [102.498,103.065,104.024,-4.942,-4.900,-4.923],    #   [mX3,mY3,mZ3,bX3,bY3,bZ3],
+                   [99.842,101.169,100.999,-5.062,-5.020,-5.124],     #   [mX4,mY4,mZ4,bX4,bY4,bZ4],
+                   [100.052,102.312,101.709,-5.087,-4.894,-5.126] ]   #   [mX5,mY5,mZ5,bX5,bY5,bZ5] ]
 
     # The conversion array is used to transform the samples from ADC to g
     for i in range(0,NO_SENSORS):
@@ -169,6 +169,7 @@ def plot_singlefig(data,NO_SENSORS):
     plt.figure(1)
     for i in range(0,NO_SENSORS):
         plt.subplot(231 + i)
+        plt.title('Sensor ' + str(i + 1))
         plt.plot(data[:,(0 + (3 * i))],label='X Axis')
         plt.plot(data[:,(1 + (3 * i))],label='Y Axis')
         plt.plot(data[:,(2 + (3 * i))],label='Z Axis')
@@ -180,14 +181,15 @@ def plot_singlefig(data,NO_SENSORS):
 
 def main():
     
-    NO_SAMPLES = 100
-    NO_SENSORS = 2
+    NO_SAMPLES = 200
+    NO_SENSORS = 5
 
     data_log = []
 
     port = '/dev/tty.usbserial-DN018OOF'
     connected = '0'
     sample = '1'
+    finish = '0'
 
     while (connected == '0'):
         input('Press a button to attempt connection with Arduino')
@@ -234,19 +236,32 @@ def main():
 
     # Different filenames for the csv file
     timestamp = datetime.datetime.utcnow()
-    name = 'Sensor6(X-1g,Y-0g,Z-0g)'
+    name = 'Sensor1B(X-1,Y-0,Z-0)'
 
     path = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensorlog.csv'
     pathTime = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensor1log-{:%d%b,%H.%M}.csv'.format(timestamp)
     pathName = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/'+name+'.csv'
 
     # Save the given data to Excel CSV
-    save_as_csv(path,np_data_g,NO_SENSORS)
+    save_as_csv(pathName,np_data_g,NO_SENSORS)
 
-    # plot_multifig(np_data_g,NO_SENSORS)
-    plot_singlefig(np_data_g,NO_SENSORS)
-
-
+    while(finish == '0'):
+        
+        selection = input('Which data do you want to use:\n0:ADC\n1:g\n')
+        if (selection == '0'):
+            data = np_data_ADC
+        elif(selection == '1'):
+            data = np_data_g
+        else:
+            data = np_data_g
+        
+        selection = input('Which option:\n0:Single figure.\n1:Seperate figures.\n2:Finish\n')
+        if (selection == '0'):
+            plot_singlefig(data,NO_SENSORS)
+        elif (selection == '1'):
+            plot_multifig(data,NO_SENSORS)
+        elif (selection == '2'):
+            finish = '1'
 
 main()
 
