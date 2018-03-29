@@ -149,7 +149,12 @@ def save_as_csv(path,data,NO_SENSORS):
         csv_write.writerows(data)
 
 def plot_multifig(data,NO_SENSORS,dataSelection):
-    
+    """ Plots 3-Axis accelerometer data on seperate graphs per sensor each in a seperate figure. The next figure will appear once the first figure is closed.
+        Takes a numpy array of 3-Axis Accelerometer data of the form [X1,Y1,Z1,X2,Y2,Z2.....XN,YN,ZN] with any number of rows that relate to the number of samples for each sensor and N defined by the NO_SENSORS(int) parameter.
+        A numpy array of dimension [n][(N*3)] should therfore be provided with data(numpy array).
+        The dataSeelction parameter should be 0 or 1 and sets the Y axis to either 0-1024 ADC or -3-3 g respectively.
+        """
+    # Axis options
     yAxisLimits = [[0,1024],[-3,3]]
     
     # Plots a seperate graph for each sensor
@@ -166,12 +171,19 @@ def plot_multifig(data,NO_SENSORS,dataSelection):
         plt.show()
     
 def plot_singlefig(data,NO_SENSORS,dataSelection):
-                             
+    """ Plots 3-Axis accelerometer data on seperate graphs per sensor but displays them all in one figure.
+        Takes a numpy array of 3-Axis Accelerometer data of the form [X1,Y1,Z1,X2,Y2,Z2.....XN,YN,ZN] with any number of rows that relate to the number of samples for each sensor and N defined by the NO_SENSORS(int) parameter.
+        A numpy array of dimension [n][(N*3)] should therfore be provided with data(numpy array).
+        The dataSeelction parameter should be 0 or 1 and sets the Y axis to either 0-1024 ADC or -3-3 g respectively.
+        """
+    
+    # Axis options
     yAxisLimits = [[0,1024],[-3,3]]
     
     # Plots graphs for each sensor on 1 figure
     plt.figure(1)
     for i in range(0,NO_SENSORS):
+        # The figure is seperated into subplots using the parameter. 231 means 2 rows, 3 columns, subplot 1
         plt.subplot(231 + i)
         plt.title('Sensor ' + str(i + 1))
         plt.plot(data[:,(0 + (3 * i))],label='X Axis')
@@ -249,8 +261,10 @@ def main():
     # Save the given data to Excel CSV
     save_as_csv(pathName,np_data_g,NO_SENSORS)
 
+    # This loop allows the user to look at the data in various formats before exiting the program
     while(finish == '0'):
         
+        # Allows the choice between using the data as in ADC or g format
         dataSelection = input('Which data do you want to use:\n0:ADC\n1:g\n')
         if (dataSelection == '0'):
             data = np_data_sorted
@@ -259,11 +273,12 @@ def main():
         else:
             data = np_data_g
         
+        # Allows the choice between different display options
         selection = input('Which option:\n0:Single figure.\n1:Seperate figures.\n2:Finish\n')
         if (selection == '0'):
-            plot_singlefig(data,NO_SENSORS,int(dataSelection))
+            plot_singlefig(data,NO_SENSORS,int(dataSelection)) # Plots all sensor graphs in one figure
         elif (selection == '1'):
-            plot_multifig(data,NO_SENSORS,int(dataSelection))
+            plot_multifig(data,NO_SENSORS,int(dataSelection)) # Plots each sensor graph in a seperate figure one after the other
         elif (selection == '2'):
             finish = '1'
 
