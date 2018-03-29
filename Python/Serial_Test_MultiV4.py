@@ -148,7 +148,9 @@ def save_as_csv(path,data,NO_SENSORS):
         csv_write.writerows(HEADER)
         csv_write.writerows(data)
 
-def plot_multifig(data,NO_SENSORS):
+def plot_multifig(data,NO_SENSORS,dataSelection):
+    
+    yAxisLimits = [[0,1024],[-3,3]]
     
     # Plots a seperate graph for each sensor
     for i in range(0,NO_SENSORS):
@@ -157,13 +159,15 @@ def plot_multifig(data,NO_SENSORS):
         plt.plot(data[:,(0 + (3 * i))],label='X Axis')
         plt.plot(data[:,(1 + (3 * i))],label='Y Axis')
         plt.plot(data[:,(2 + (3 * i))],label='Z Axis')
-        plt.ylim(-3,3)
+        plt.ylim(yAxisLimits[dataSelection][0],yAxisLimits[dataSelection][1])
         plt.xlabel('Sample Index')
         plt.ylabel('Acceleration/g')
         plt.legend()
         plt.show()
     
-def plot_singlefig(data,NO_SENSORS):
+def plot_singlefig(data,NO_SENSORS,dataSelection):
+                             
+    yAxisLimits = [[0,1024],[-3,3]]
     
     # Plots graphs for each sensor on 1 figure
     plt.figure(1)
@@ -173,7 +177,7 @@ def plot_singlefig(data,NO_SENSORS):
         plt.plot(data[:,(0 + (3 * i))],label='X Axis')
         plt.plot(data[:,(1 + (3 * i))],label='Y Axis')
         plt.plot(data[:,(2 + (3 * i))],label='Z Axis')
-        plt.ylim(-3,3)
+        plt.ylim(yAxisLimits[dataSelection][0],yAxisLimits[dataSelection][1])
         plt.xlabel('Sample Index')
         plt.ylabel('Acceleration/g')
         plt.legend()
@@ -247,19 +251,19 @@ def main():
 
     while(finish == '0'):
         
-        selection = input('Which data do you want to use:\n0:ADC\n1:g\n')
-        if (selection == '0'):
-            data = np_data_ADC
-        elif(selection == '1'):
+        dataSelection = input('Which data do you want to use:\n0:ADC\n1:g\n')
+        if (dataSelection == '0'):
+            data = np_data_sorted
+        elif(dataSelection == '1'):
             data = np_data_g
         else:
             data = np_data_g
         
         selection = input('Which option:\n0:Single figure.\n1:Seperate figures.\n2:Finish\n')
         if (selection == '0'):
-            plot_singlefig(data,NO_SENSORS)
+            plot_singlefig(data,NO_SENSORS,int(dataSelection))
         elif (selection == '1'):
-            plot_multifig(data,NO_SENSORS)
+            plot_multifig(data,NO_SENSORS,int(dataSelection))
         elif (selection == '2'):
             finish = '1'
 
