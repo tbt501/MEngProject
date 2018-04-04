@@ -156,15 +156,12 @@ def save_as_csv(path,data,NO_SENSORS):
     HEADERS = [HEADER1,HEADER2,HEADER3,HEADER4,HEADER5]
 
     HEADER = HEADERS[NO_SENSORS - 1]
-    
-    formattedData = data.copy()
-    formattedData[:,[3,7,11,15,19]] = formattedData[:,[3,7,11,15,19]]/1000
 
     # The  data is saved as a CSV file using the given path
     with open(path, 'w') as csv_file:
         csv_write = csv.writer(csv_file, dialect='excel')
         csv_write.writerows(HEADER)
-        csv_write.writerows(formattedData)
+        csv_write.writerows(data)
 
 def plot_multifig(data,NO_SENSORS,dataSelection):
     """ Plots 3-Axis accelerometer data on seperate graphs per sensor each in a seperate figure. The next figure will appear once the first figure is closed.
@@ -200,7 +197,7 @@ def plot_singlefig(data,NO_SENSORS,dataSelection):
         """
     
     # The time is converted from ms to s for plotting on the graph
-    xAxis = data[:,[3,7,11,15,19]]/1000
+    xAxis = data[:,[3,7,11,15,19]]
     
     # Axis options
     yAxisLimits = [[0,1024],[-3,3]]
@@ -245,7 +242,7 @@ def main():
     
     currentPath = path
 
-    modeSelect = input('Please select the mode:\n0:Collect Samples\n1:Manipulate Data')
+    modeSelect = input('Please select the mode:\n0:Collect Samples\n1:Manipulate Data\n')
     if (modeSelect == '0'):
         while (connected == '0'):
             input('Press a button to attempt connection with Arduino')
@@ -270,7 +267,7 @@ def main():
         # Sampling loop
         while (sample == '1'):
             collect_samples(arduinoSerial,NO_SAMPLES,data_log)
-            sample = input('Continue? (1:yes, Other:no)') # User ends/continues sampling loop
+            sample = input('Continue? (1:yes, Other:no)\n') # User ends/continues sampling loop
             #sample = '0' # Sampling finishes after NO_SAMPLES have been taken
 
         arduinoSerial.write(b'S') # Send 2nd 'S' to tell the Arduino to stop
@@ -290,6 +287,10 @@ def main():
 
         # Converts the samples from ADC to g
         np_data_g = ADC_to_g(np_data_ADC,NO_SENSORS)
+        
+        # Convert the ms to s before saving to the csv
+        np_data_g[:,[3,7,11,15,19]] = np_data_g[:,[3,7,11,15,19]]/1000
+        np_data_ADC[:,[3,7,11,15,19]] = np_data_ADC[:,[3,7,11,15,19]]/1000
 
         # Save the given data to Excel CSV
         save_as_csv(currentPath,np_data_g,NO_SENSORS)
@@ -300,14 +301,14 @@ def main():
             # Allows the choice between using the data as in ADC or g format
             dataSelection = input('Which data do you want to use:\n0:ADC\n1:g\n')
             if (dataSelection == '0'):
-                data = np_data_sorted
+                data = np_data_ADC
             elif(dataSelection == '1'):
                 data = np_data_g
             else:
                 data = np_data_g
-            
+
             # Allows the choice between different display options
-            selection = input('Which option:\n0:Single figure.\n1:Seperate figures.\n2:Manipulate Data\n3:Finish')
+            selection = input('Which option:\n0:Single figure.\n1:Seperate figures.\n2:Manipulate Data\n3:Finish\n')
             if (selection == '0'):
                 plot_singlefig(data,NO_SENSORS,int(dataSelection)) # Plots all sensor graphs in one figure
             elif (selection == '1'):
@@ -325,12 +326,14 @@ def main():
         
         # Remove the header and convert the data to a float32 numpy array for manipulation
         np_saved_data = np.array(saved_data[2:]).astype(np.float32)
+        print(np_saved_data)
 
         # This loop allows the user to look at the data in various formats before exiting the program
+        finish = '0'
         while(finish == '0'):
             
             # Allows the choice between different display options
-            selection = input('Which option:\n0:Single figure.\n1:Seperate figures.\n2:Finish')
+            selection = input('Which option:\n0:Single figure.\n1:Seperate figures.\n2:Finish\n')
             if (selection == '0'):
                 plot_singlefig(np_saved_data,NO_SENSORS,1) # Plots all sensor graphs in one figure
             elif (selection == '1'):
