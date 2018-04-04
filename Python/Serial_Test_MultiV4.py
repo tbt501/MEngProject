@@ -122,7 +122,19 @@ def ADC_to_g(np_data,NO_SENSORS):
         for j in range(0,3):
             data[:,j+(4*i)] = ((data[:,j+(4*i)]/CONVERSION[i][j]) + CONVERSION[i][j+3])
     
-    return (data)
+    return(data)
+
+def read_csv(path):
+    """ Reads the csv file from the given path(string) and returns it as a list
+    """
+    csv_data =[]
+    
+    with open(path, 'r') as csv_file:
+        csv_read = csv.reader(csv_file, dialect='excel')
+        for row in csv_read:
+            csv_data.append(row)
+
+    return(csv_data)
 
 def save_as_csv(path,data,NO_SENSORS):
     """ Takes a numpy array of 3-Axis Accelerometer data of the form [X1,Y1,Z1,Time,X2,Y2,Z2,Time.....XN,YN,ZN,Time] with any number of rows that relate to the number of samples for each sensor and N defined by the NO_SENSORS(int) parameter.
@@ -211,91 +223,120 @@ def plot_singlefig(data,NO_SENSORS,dataSelection):
 def main():
     
     # Each sample takes around 30ms. So 2000 is 1 minute.
-    NO_SAMPLES = 3000
+    NO_SAMPLES = 20
     NO_SENSORS = 5
 
     data_log = []
+    saved_data = []
 
     port = '/dev/tty.usbserial-DN018OOF'
     connected = '0'
     sample = '1'
     finish = '0'
-
-    while (connected == '0'):
-        input('Press a button to attempt connection with Arduino')
-        try:
-            # Create Serial port object called arduinoSerial with a 5 second timeout
-            arduinoSerial = serial.Serial(port,9600, timeout=5)
-            print("Connected to Arduino")
-            connected = '1'
-        except:
-            print("Failed to connect to Arduino")
-
-    print("Initialising...")
-    # These commands clear any samples/commands left in the buffers
-    time.sleep(2)
-    arduinoSerial.reset_input_buffer()
-    arduinoSerial.reset_output_buffer()
-    time.sleep(6)   # Required for the XBee's to initialise
+    modeSelect = '0'
     
-    input('Please press a button to begin sampling')
-    arduinoSerial.write(b'S')   # Send 'S' to tell the arduino to start taking/sending samples
-
-    # Sampling loop
-    while (sample == '1'):
-        collect_samples(arduinoSerial,NO_SAMPLES,data_log)
-        sample = input('Continue? (1:yes, Other:no)') # User ends/continues sampling loop
-        #sample = '0' # Sampling finishes after NO_SAMPLES have been taken
-
-    arduinoSerial.write(b'S') # Send 2nd 'S' to tell the Arduino to stop
-    arduinoSerial.close()
-
-    # Create a Numpy array of the collected sample data
-    np_data_log = np.array(data_log)
-                           
-    # This function removes samples so each sensor has the same amount
-    np_data_log_eq = equalise_sample_numbers(np_data_log,NO_SENSORS)
-
-    # Sorts the samples into columns by sensor ID [[1X1,1Y1,1Z1,1X2...],[2X1,2Y1,2Z1,2X2...],.....]
-    np_data_sorted = sort_samples(np_data_log_eq,NO_SENSORS)
-
-    # Converts the samples to float for conversion
-    np_data_ADC = np_data_sorted.astype(np.float32)
-
-    # Converts the samples from ADC to g
-    np_data_g = ADC_to_g(np_data_ADC,NO_SENSORS)
-
     # Different filenames for the csv file
     timestamp = datetime.datetime.utcnow()
     name = 'NormalOperation-10min'
-
+    
     path = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensorlog.csv'
     pathTime = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensor1log-{:%d%b,%H.%M}.csv'.format(timestamp)
     pathName = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/'+name+'.csv'
+    
+    currentPath = path
 
-    # Save the given data to Excel CSV
-    save_as_csv(pathName,np_data_g,NO_SENSORS)
+    modeSelect = input('Please select the mode:\n0:Collect Samples\n1:Manipulate Data')
+    if (modeSelect == '0'):
+        while (connected == '0'):
+            input('Press a button to attempt connection with Arduino')
+            try:
+                # Create Serial port object called arduinoSerial with a 5 second timeout
+                arduinoSerial = serial.Serial(port,9600, timeout=5)
+                print("Connected to Arduino")
+                connected = '1'
+            except:
+                print("Failed to connect to Arduino")
 
-    # This loop allows the user to look at the data in various formats before exiting the program
-    while(finish == '0'):
+        print("Initialising...")
+        # These commands clear any samples/commands left in the buffers
+        time.sleep(2)
+        arduinoSerial.reset_input_buffer()
+        arduinoSerial.reset_output_buffer()
+        time.sleep(6)   # Required for the XBee's to initialise
         
-        # Allows the choice between using the data as in ADC or g format
-        dataSelection = input('Which data do you want to use:\n0:ADC\n1:g\n')
-        if (dataSelection == '0'):
-            data = np_data_sorted
-        elif(dataSelection == '1'):
-            data = np_data_g
-        else:
-            data = np_data_g
+        input('Please press a button to begin sampling')
+        arduinoSerial.write(b'S')   # Send 'S' to tell the arduino to start taking/sending samples
+
+        # Sampling loop
+        while (sample == '1'):
+            collect_samples(arduinoSerial,NO_SAMPLES,data_log)
+            sample = input('Continue? (1:yes, Other:no)') # User ends/continues sampling loop
+            #sample = '0' # Sampling finishes after NO_SAMPLES have been taken
+
+        arduinoSerial.write(b'S') # Send 2nd 'S' to tell the Arduino to stop
+        arduinoSerial.close()
+
+        # Create a Numpy array of the collected sample data
+        np_data_log = np.array(data_log)
         
-        # Allows the choice between different display options
-        selection = input('Which option:\n0:Single figure.\n1:Seperate figures.\n2:Finish\n')
-        if (selection == '0'):
-            plot_singlefig(data,NO_SENSORS,int(dataSelection)) # Plots all sensor graphs in one figure
-        elif (selection == '1'):
-            plot_multifig(data,NO_SENSORS,int(dataSelection)) # Plots each sensor graph in a seperate figure one after the other
-        elif (selection == '2'):
-            finish = '1'
+        # This function removes samples so each sensor has the same amount
+        np_data_log_eq = equalise_sample_numbers(np_data_log,NO_SENSORS)
+
+        # Sorts the samples into columns by sensor ID [[1X1,1Y1,1Z1,1X2...],[2X1,2Y1,2Z1,2X2...],.....]
+        np_data_sorted = sort_samples(np_data_log_eq,NO_SENSORS)
+
+        # Converts the samples to float for conversion
+        np_data_ADC = np_data_sorted.astype(np.float32)
+
+        # Converts the samples from ADC to g
+        np_data_g = ADC_to_g(np_data_ADC,NO_SENSORS)
+
+        # Save the given data to Excel CSV
+        save_as_csv(currentPath,np_data_g,NO_SENSORS)
+
+        # This loop allows the user to look at the data in various formats before exiting the program
+        while(finish == '0'):
+            
+            # Allows the choice between using the data as in ADC or g format
+            dataSelection = input('Which data do you want to use:\n0:ADC\n1:g\n')
+            if (dataSelection == '0'):
+                data = np_data_sorted
+            elif(dataSelection == '1'):
+                data = np_data_g
+            else:
+                data = np_data_g
+            
+            # Allows the choice between different display options
+            selection = input('Which option:\n0:Single figure.\n1:Seperate figures.\n2:Manipulate Data\n3:Finish')
+            if (selection == '0'):
+                plot_singlefig(data,NO_SENSORS,int(dataSelection)) # Plots all sensor graphs in one figure
+            elif (selection == '1'):
+                plot_multifig(data,NO_SENSORS,int(dataSelection)) # Plots each sensor graph in a seperate figure one after the other
+            elif (selection == '2'):
+                modeSelect = '1'
+                finish = '1'
+            elif (selection == '3'):
+                finish = '1'
+
+    if (modeSelect == '1'):
+        
+        # Read out the data from scecified file
+        saved_data = read_csv(currentPath)
+        
+        # Remove the header and convert the data to a float32 numpy array for manipulation
+        np_saved_data = np.array(saved_data[2:]).astype(np.float32)
+
+        # This loop allows the user to look at the data in various formats before exiting the program
+        while(finish == '0'):
+            
+            # Allows the choice between different display options
+            selection = input('Which option:\n0:Single figure.\n1:Seperate figures.\n2:Finish')
+            if (selection == '0'):
+                plot_singlefig(np_saved_data,NO_SENSORS,1) # Plots all sensor graphs in one figure
+            elif (selection == '1'):
+                plot_multifig(np_saved_data,NO_SENSORS,1) # Plots each sensor graph in a seperate figure one after the other
+            elif (selection == '2'):
+                finish = '1'
 
 main()
 
