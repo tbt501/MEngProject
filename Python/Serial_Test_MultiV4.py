@@ -4,7 +4,7 @@ import datetime
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.fftpack
+from scipy import fftpack
 
 
 def collect_samples(serialPort,NO_SAMPLES,log):
@@ -169,9 +169,6 @@ def plot_multifig(data,NO_SENSORS,dataSelection):
         A numpy array of dimension [n][(N*4)] should therfore be provided with data(numpy array).
         The dataSeelction parameter should be 0 or 1 and sets the Y axis to either 0-1024 ADC or -3-3 g respectively.
         """
-    
-    # The time is converted from ms to s for plotting on the graph
-    xAxis = data[:,[3,7,11,15,19]]/1000
         
     # Axis options
     yAxisLimits = [[0,1024],[-3,3]]
@@ -180,9 +177,9 @@ def plot_multifig(data,NO_SENSORS,dataSelection):
     for i in range(0,NO_SENSORS):
         plt.figure(i + 1)
         plt.title('Sensor ' + str(i + 1))
-        plt.plot(xAxis[:,i],data[:,(0 + (4 * i))],label='X Axis')
-        plt.plot(xAxis[:,i],data[:,(1 + (4 * i))],label='Y Axis')
-        plt.plot(xAxis[:,i],data[:,(2 + (4 * i))],label='Z Axis')
+        plt.plot(data[:,(3 + (4 * i))],data[:,(0 + (4 * i))],label='X Axis')
+        plt.plot(data[:,(3 + (4 * i))],data[:,(1 + (4 * i))],label='Y Axis')
+        plt.plot(data[:,(3 + (4 * i))],data[:,(2 + (4 * i))],label='Z Axis')
         plt.ylim(yAxisLimits[dataSelection][0],yAxisLimits[dataSelection][1])
         plt.xlabel('Time/s')
         plt.ylabel('Acceleration/g')
@@ -196,9 +193,6 @@ def plot_singlefig(data,NO_SENSORS,dataSelection):
         The dataSeelction parameter should be 0 or 1 and sets the Y axis to either 0-1024 ADC or -3-3 g respectively.
         """
     
-    # The time is converted from ms to s for plotting on the graph
-    xAxis = data[:,[3,7,11,15,19]]
-    
     # Axis options
     yAxisLimits = [[0,1024],[-3,3]]
     
@@ -208,9 +202,9 @@ def plot_singlefig(data,NO_SENSORS,dataSelection):
         # The figure is seperated into subplots using the parameter. 231 means 2 rows, 3 columns, subplot 1
         plt.subplot(231 + i)
         plt.title('Sensor ' + str(i + 1))
-        plt.plot(xAxis[:,i],data[:,(0 + (4 * i))],label='X Axis')
-        plt.plot(xAxis[:,i],data[:,(1 + (4 * i))],label='Y Axis')
-        plt.plot(xAxis[:,i],data[:,(2 + (4 * i))],label='Z Axis')
+        plt.plot(data[:,(3 + (4 * i))],data[:,(0 + (4 * i))],label='X Axis')
+        plt.plot(data[:,(3 + (4 * i))],data[:,(1 + (4 * i))],label='Y Axis')
+        plt.plot(data[:,(3 + (4 * i))],data[:,(2 + (4 * i))],label='Z Axis')
         plt.ylim(yAxisLimits[dataSelection][0],yAxisLimits[dataSelection][1])
         plt.xlabel('Time/s')
         plt.ylabel('Acceleration/g')
@@ -220,7 +214,7 @@ def plot_singlefig(data,NO_SENSORS,dataSelection):
 def main():
     
     # Each sample takes around 30ms. So 2000 is 1 minute.
-    NO_SAMPLES = 20
+    NO_SAMPLES = 20000
     NO_SENSORS = 5
 
     data_log = []
@@ -236,11 +230,12 @@ def main():
     timestamp = datetime.datetime.utcnow()
     name = 'NormalOperation-10min'
     
-    path = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensorlog.csv'
-    pathTime = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensor1log-{:%d%b,%H.%M}.csv'.format(timestamp)
-    pathName = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/'+name+'.csv'
+    path = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensorlog'
+    pathTime = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensor1log-{:%d%b,%H.%M}'.format(timestamp)
+    pathName = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/'+name
     
-    currentPath = path
+    
+    currentPath = pathName+'.csv'
 
     modeSelect = input('Please select the mode:\n0:Collect Samples\n1:Manipulate Data\n')
     if (modeSelect == '0'):
@@ -319,15 +314,71 @@ def main():
             elif (selection == '3'):
                 finish = '1'
 
+
     if (modeSelect == '1'):
         
         # Read out the data from scecified file
         saved_data = read_csv(currentPath)
         
-        # Remove the header and convert the data to a float32 numpy array for manipulation
-        np_saved_data = np.array(saved_data[2:]).astype(np.float32)
-        print(np_saved_data)
+        # Remove the header, select a portion of data and convert the data to a float32 numpy array for manipulation
+        np_saved_data = np.array(saved_data[2:1802]).astype(np.float32)
+        
+        # Create a copy of the data for interpolation
+        np_interpol_data = np_saved_data.copy()
+        
+        # Interpolate the data
+        for i in range(0,NO_SENSORS):
+            # Create a time array fopr each sensor that has the same start and end time as the data but with a constant interval
+            np_temp = np.linspace(0,np_interpol_data[-1][3+(i*4)],np_interpol_data.shape[0])
+            for j in range(0,3):
+                # Use the constant interval time data to interpolate the corresponding x,y and z values from the original data
+                np_interpol_data[:,j+(4*i)] = np.interp(np_temp,np_interpol_data[:,3+(i*4)],np_interpol_data[:,j+(i*4)])
+            # Replace the original sample times with the constant interval sample times for each sensor
+            np_interpol_data[:,3+(i*4)] = np_temp
+        
+        # Save the interpolated data to CSV
+        save_as_csv(pathName+'(Interpolated).csv',np_interpol_data,NO_SENSORS)
+        
+        # Create a copy of the interpolated data for FFT
+        np_fft_data = np_interpol_data.copy()
+        
+        # Perform an FFT on the X,Y and Z values for each sensor and save the magnitude
+        for i in range(0,NO_SENSORS):
+            for j in range(0,3):
+                np_fft_data[:,j+(4*i)] = abs(fftpack.fft(np_fft_data[:,j+(4*i)]))
+        
+        # Get number of samples
+        N = np_fft_data.shape[0]
+        # Get the time interval for each sensor
+        dt = np_fft_data[[1],[3,7,11,15,19]] - np_fft_data[[0],[3,7,11,15,19]]
+        print(dt)
+        # Find the smapling frequency for each sensor
+        fs = 1/dt
 
+        # Produce the frequency data corresponding to the FFT
+        for i in range(0,NO_SENSORS):
+            np_fft_data[:,3+(i*4)] = fftpack.fftfreq(N) * fs[i]
+
+        # Remove values above the Nyquist Frequency N/2
+        np_ffthalf_data = np_fft_data[:int(N/2)]
+
+        # Plot the FFT values
+        plt.figure(1)
+        for i in range(0,NO_SENSORS):
+            # The figure is seperated into subplots using the parameter. 231 means 2 rows, 3 columns, subplot 1
+            plt.subplot(231 + i)
+            plt.title('Sensor ' + str(i + 1))
+            plt.plot(np_ffthalf_data[:,(3 + (4 * i))],np_ffthalf_data[:,(0 + (4 * i))],label='X Axis')
+            plt.plot(np_ffthalf_data[:,(3 + (4 * i))],np_ffthalf_data[:,(1 + (4 * i))],label='Y Axis')
+            plt.plot(np_ffthalf_data[:,(3 + (4 * i))],np_ffthalf_data[:,(2 + (4 * i))],label='Z Axis')
+            plt.xlabel('Freq/Hz')
+            plt.ylabel('Magnitude')
+            plt.legend()
+        plt.show()
+
+        # Save the FFT values to CSV
+        save_as_csv(pathName+'(FFT).csv',np_ffthalf_data,NO_SENSORS)
+        
         # This loop allows the user to look at the data in various formats before exiting the program
         finish = '0'
         while(finish == '0'):
