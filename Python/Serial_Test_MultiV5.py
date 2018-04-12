@@ -7,45 +7,66 @@ import matplotlib.pyplot as plt
 from scipy import fftpack
 
 
-def collect_samples(serialPort,NO_SAMPLES,log):
+def collect_samples(serialPort,NO_SENSORS,NO_SAMPLES,log):
     """ Saves samples collected from 3-Axis Accelerometers. Samples should be recieved in form (ID X Y Z Time /r/n) with a space to seperate the data. Invalid data is rejected and any samples lost this way are recorded and displayed to the user once the function finishes.
         All samples are collected from the port defined by the serialPort(string) parameter and the function will continue until it saves a number of samples defined by the NO_SAMPLES(int) parameter.
         All samples will be appended to the list specified by the log(list) parameter. This should either be an empty list or a list with 6 columns.
     """
     run = '1'
     badSamples = 0
-    count = 0
+    count = 1
+    log_temp = []
+    temp = [0] * 20
+    NO_FIELDS = (NO_SENSORS * 3) + 1
     
     while (run == '1'):
         # If the input buffer is not empty read the data out into rawData using \n as a delimiter.
         if (serialPort.inWaiting()>0):
             rawData = serialPort.readline()
+            print(rawData)
             
             # If invalid data is recieved this prevents program crash
             try:
                 # Decode the bytes into a string
                 data = rawData.decode()
                 
-                # Split the ID, x, y, z, time and newline values into a list
-                data_readings = data.split(" ", 6)
-                print(data_readings)
-                
-                # A correct sample should contain 6 values and not include null and so this is used
-                # to validate the data and record any samples that are discarded in this way
-                if (len(data_readings) == 6 and '' not in data_readings):
-                    # Discard newline characters before saving data
-                    int_data_readings = list(map(int,data_readings[:5]))
-                    log.append(int_data_readings)
+                # Split x, y, z and newline values into a list
+                if (count >= (NO_SAMPLES + 1)):
+                    endTime_temp = data.split(" ", 2)
+                    if (len(endTime_temp) == 2 and '' not in endTime_temp):
+                        endTime = int(endTime_temp[0])
+                    else:
+                        endTime = 1625
+                    print('Lost Samples: ' + str(badSamples))
+                    run = '0'
                 else:
-                    badSamples += 1
+                    data_readings = data.split(" ", NO_FIELDS)
+                    print(data_readings)
+                    
+                    # A correct sample should contain 16 values and not include null and so this is used
+                    # to validate the data and record any samples that are discarded in this way
+                    if (len(data_readings) == NO_FIELDS and '' not in data_readings):
+                        # Discard newline characters before saving data
+                        int_data_readings = list(map(int,data_readings[:(NO_FIELDS - 1)]))
+                        log_temp.append(int_data_readings)
+                    else:
+                        badSamples += 1
             except:
                 print('Invalid data recieved')
             
-            # Take NO_SAMPLES samples then possibility to quit
-            if (count == NO_SAMPLES):
-                print('Lost Samples: ' + str(badSamples))
-                run = '0'
             count += 1
+
+    samplingPeriod = (endTime/NO_SAMPLES)/NO_SENSORS
+    timeStamp = 0.0
+
+    for i in range(0,len(log_temp)):
+        for j in range(0,NO_SENSORS):
+            temp[0+(j*4)] = log_temp[i][0+(j*3)]
+            temp[1+(j*4)] = log_temp[i][1+(j*3)]
+            temp[2+(j*4)] = log_temp[i][2+(j*3)]
+            temp[3+(j*4)] = timeStamp
+            timeStamp += samplingPeriod
+        log.append(temp.copy())
 
 def equalise_sample_numbers(np_samples,NO_SENSORS):
     """ A function that takes a numpy array, given by the np_samples(numpy aray) parameter, of samples collected from 3-Axis Accelerometers in the form [ID,X,Y,Z,Time] and returns a numpy area of samples where each ID value has the same amount of samples. Each unique ID relates to an associated sensor and the total number of sensors should be given with the parameter NO_SENSORS(int).
@@ -213,9 +234,10 @@ def plot_singlefig(data,NO_SENSORS,dataSelection):
 
 def main():
     
-    # Each sample takes around 30ms. So 2000 is 1 minute.
-    NO_SAMPLES = 20000
+    # Number of samples must be multiples of 200
+    NO_SAMPLES = 200
     NO_SENSORS = 5
+    SAMPLING_CYCLES = 1
 
     data_log = []
     saved_data = []
@@ -234,8 +256,9 @@ def main():
     pathTime = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensor1log-{:%d%b,%H.%M}'.format(timestamp)
     pathName = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/'+name
     
+    savePath = path
+    samplePath = savePath + '.csv'
     
-    currentPath = pathName+'.csv'
 
     modeSelect = input('Please select the mode:\n0:Collect Samples\n1:Manipulate Data\n')
     if (modeSelect == '0'):
@@ -243,7 +266,7 @@ def main():
             input('Press a button to attempt connection with Arduino')
             try:
                 # Create Serial port object called arduinoSerial with a 5 second timeout
-                arduinoSerial = serial.Serial(port,9600, timeout=5)
+                arduinoSerial = serial.Serial(port,baudrate=115200,timeout=5.0)
                 print("Connected to Arduino")
                 connected = '1'
             except:
@@ -260,25 +283,19 @@ def main():
         arduinoSerial.write(b'S')   # Send 'S' to tell the arduino to start taking/sending samples
 
         # Sampling loop
+        count = 1
         while (sample == '1'):
-            collect_samples(arduinoSerial,NO_SAMPLES,data_log)
-            sample = input('Continue? (1:yes, Other:no)\n') # User ends/continues sampling loop
-            #sample = '0' # Sampling finishes after NO_SAMPLES have been taken
+            collect_samples(arduinoSerial,NO_SENSORS,NO_SAMPLES,data_log)
+            if (count >= SAMPLING_CYCLES):
+                sample = '0' # Sampling finishes after NO_SAMPLES have been taken
+            count += 1
 
         arduinoSerial.write(b'S') # Send 2nd 'S' to tell the Arduino to stop
         arduinoSerial.close()
 
-        # Create a Numpy array of the collected sample data
-        np_data_log = np.array(data_log)
-        
-        # This function removes samples so each sensor has the same amount
-        np_data_log_eq = equalise_sample_numbers(np_data_log,NO_SENSORS)
-
-        # Sorts the samples into columns by sensor ID [[1X1,1Y1,1Z1,1X2...],[2X1,2Y1,2Z1,2X2...],.....]
-        np_data_sorted = sort_samples(np_data_log_eq,NO_SENSORS)
-
         # Converts the samples to float for conversion
-        np_data_ADC = np_data_sorted.astype(np.float32)
+        np_data_ADC = np.array(data_log).astype(np.float32)
+        print(np_data_ADC)
 
         # Converts the samples from ADC to g
         np_data_g = ADC_to_g(np_data_ADC,NO_SENSORS)
@@ -288,7 +305,7 @@ def main():
         np_data_ADC[:,[3,7,11,15,19]] = np_data_ADC[:,[3,7,11,15,19]]/1000
 
         # Save the given data to Excel CSV
-        save_as_csv(currentPath,np_data_g,NO_SENSORS)
+        save_as_csv(samplePath,np_data_g,NO_SENSORS)
 
         # This loop allows the user to look at the data in various formats before exiting the program
         while(finish == '0'):
@@ -318,29 +335,13 @@ def main():
     if (modeSelect == '1'):
         
         # Read out the data from scecified file
-        saved_data = read_csv(currentPath)
+        saved_data = read_csv(samplePath)
         
         # Remove the header, select a portion of data and convert the data to a float32 numpy array for manipulation
         np_saved_data = np.array(saved_data[2:1802]).astype(np.float32)
-        
-        # Create a copy of the data for interpolation
-        np_interpol_data = np_saved_data.copy()
-        
-        # Interpolate the data
-        for i in range(0,NO_SENSORS):
-            # Create a time array fopr each sensor that has the same start and end time as the data but with a constant interval
-            np_temp = np.linspace(0,np_interpol_data[-1][3+(i*4)],np_interpol_data.shape[0])
-            for j in range(0,3):
-                # Use the constant interval time data to interpolate the corresponding x,y and z values from the original data
-                np_interpol_data[:,j+(4*i)] = np.interp(np_temp,np_interpol_data[:,3+(i*4)],np_interpol_data[:,j+(i*4)])
-            # Replace the original sample times with the constant interval sample times for each sensor
-            np_interpol_data[:,3+(i*4)] = np_temp
-        
-        # Save the interpolated data to CSV
-        save_as_csv(pathName+'(Interpolated).csv',np_interpol_data,NO_SENSORS)
-        
-        # Create a copy of the interpolated data for FFT
-        np_fft_data = np_interpol_data.copy()
+
+        # Create a copy of the data for FFT
+        np_fft_data = np_saved_data.copy()
         
         # Perform an FFT on the X,Y and Z values for each sensor and save the magnitude
         for i in range(0,NO_SENSORS):
@@ -377,7 +378,7 @@ def main():
         plt.show()
 
         # Save the FFT values to CSV
-        save_as_csv(pathName+'(FFT).csv',np_ffthalf_data,NO_SENSORS)
+        save_as_csv(savePath+'(FFT).csv',np_ffthalf_data,NO_SENSORS)
         
         # This loop allows the user to look at the data in various formats before exiting the program
         finish = '0'
@@ -393,27 +394,6 @@ def main():
                 finish = '1'
 
 main()
-
-if(0):
-    # Number of samplepoints
-    N = 600
-    # sample spacing
-    T = 1.0 / 800.0
-    x = np.linspace(0.0, N*T, N) # Create an array from 0 - N*T with N points between
-    print (x)
-    y = np.sin(50*2.0*np.pi*x)
-    print (y)
-    yf = scipy.fftpack.fft(y)
-    print (yf)
-    xf = np.linspace(0.0, 1.0/(2.0*T), N/2)
-    print (xf)
-    # The figure is seperated into subplots using the parameter. 231 means 2 rows, 3 columns, subplot 1
-    plt.subplot(211)
-    plt.plot(x,y)
-    plt.subplot(212)
-    plt.plot(xf, 2.0/N * np.abs(yf[:N//2]))
-
-    plt.show()
 
 
 

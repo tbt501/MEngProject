@@ -214,7 +214,7 @@ def plot_singlefig(data,NO_SENSORS,dataSelection):
 def main():
     
     # Each sample takes around 30ms. So 2000 is 1 minute.
-    NO_SAMPLES = 20000
+    NO_SAMPLES = 100
     NO_SENSORS = 5
 
     data_log = []
@@ -243,7 +243,7 @@ def main():
             input('Press a button to attempt connection with Arduino')
             try:
                 # Create Serial port object called arduinoSerial with a 5 second timeout
-                arduinoSerial = serial.Serial(port,9600, timeout=5)
+                arduinoSerial = serial.Serial(port,115200, timeout=5)
                 print("Connected to Arduino")
                 connected = '1'
             except:

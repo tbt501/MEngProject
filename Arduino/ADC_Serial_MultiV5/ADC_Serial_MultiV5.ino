@@ -18,19 +18,22 @@ const int sensor2z = A15;
 
 // Variables
 const int NO_OF_SENSORS = 5;
+const int NO_OF_SAMPLES = 200;
 const int sensorInfo[5][3] = { {sensor1x,sensor1y,sensor1z},
                                {sensor2x,sensor2y,sensor2z},
                                {sensor3x,sensor3y,sensor3z},
                                {sensor4x,sensor4y,sensor4z},
-                               {sensor5x,sensor5y,sensor5z}};
+                               {sensor5x,sensor5y,sensor5z} };
+
 
 bool start = false;
 int serialRX;
-unsigned long timeStart,timeSample;
+unsigned int timeStart,timeEnd;
+int sensorVals[NO_OF_SAMPLES][15];
 
 void setup() {
   
-  Serial.begin(9600);
+  Serial.begin(115200);
   analogReference(EXTERNAL);
   
 }
@@ -44,40 +47,48 @@ void loop() {
         }
      }
   }
+
   
-  timeStart = millis();
   while(start){
-    for(int i=0; i<NO_OF_SENSORS; i++){
-      timeSample = millis()-timeStart;
-      delay(1);
-      Serial.print(i+1);
-      delay(1);
-      Serial.print(" ");
-      delay(1);
-      Serial.print(analogRead(sensorInfo[i][0]));
-      delay(1);
-      Serial.print(" ");
-      delay(1);
-      Serial.print(analogRead(sensorInfo[i][1]));
-      delay(1);
-      Serial.print(" ");
-      delay(1);
-      Serial.print(analogRead(sensorInfo[i][2]));
-      delay(1);
-      Serial.print(" ");
-      delay(1);
-      Serial.print(timeSample);
-      delay(20);
-      Serial.print(" ");
-      delay(1);
-      Serial.println();
-           
-      if (Serial.available() > 0){
-          serialRX = Serial.read();
-          if (serialRX == 'S'){
-            start = false;
-          }
+    
+    timeStart = millis();
+
+    for(int i=0; i<NO_OF_SAMPLES; i++){
+      for(int j=0; j<NO_OF_SENSORS; j++){
+        
+        // Takes 100 microseconds per analogue read plus added delay
+        sensorVals[i][0+(j*3)] = analogRead(sensorInfo[j][0]);
+        delayMicroseconds(100);
+        sensorVals[i][1+(j*3)] = analogRead(sensorInfo[j][1]);
+        delayMicroseconds(100);
+        sensorVals[i][2+(j*3)] = analogRead(sensorInfo[j][2]);
+        delayMicroseconds(100);
       }
+    }
+ 
+    timeEnd = millis()-timeStart;
+
+    for(int i=0; i<NO_OF_SAMPLES; i++){
+      for(int j=0; j<NO_OF_SENSORS; j++){
+        Serial.print(sensorVals[i][0+(j*3)]);
+        Serial.print(" ");
+        Serial.print(sensorVals[i][1+(j*3)]);
+        Serial.print(" ");
+        Serial.print(sensorVals[i][2+(j*3)]);
+        Serial.print(" ");
+        delay(4);
+      }
+      Serial.println();
+    }
+    Serial.print(timeEnd);
+    Serial.print(" ");
+    Serial.println();
+    
+    if (Serial.available() > 0){
+        serialRX = Serial.read();
+        if (serialRX == 'S'){
+          start = false;
+        }
     }
   } 
 }
