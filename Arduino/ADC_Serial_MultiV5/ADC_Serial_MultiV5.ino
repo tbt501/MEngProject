@@ -18,7 +18,7 @@ const int sensor2z = A15;
 
 // Variables
 const int NO_OF_SENSORS = 5;
-const int NO_OF_SAMPLES = 200;
+const int NO_OF_SAMPLES = 250;
 const int sensorInfo[5][3] = { {sensor1x,sensor1y,sensor1z},
                                {sensor2x,sensor2y,sensor2z},
                                {sensor3x,sensor3y,sensor3z},

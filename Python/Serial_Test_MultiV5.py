@@ -36,7 +36,8 @@ def collect_samples(serialPort,NO_SENSORS,NO_SAMPLES,log):
                     if (len(endTime_temp) == 2 and '' not in endTime_temp):
                         endTime = int(endTime_temp[0])
                     else:
-                        endTime = 1625
+                        endTime = 780
+                        print('Time not recieved')
                     print('Lost Samples: ' + str(badSamples))
                     run = '0'
                 else:
@@ -234,10 +235,11 @@ def plot_singlefig(data,NO_SENSORS,dataSelection):
 
 def main():
     
-    # Number of samples must be multiples of 200
-    NO_SAMPLES = 200
+    # Number of samples must match the Arduino
+    NO_SAMPLES = 250
     NO_SENSORS = 5
-    SAMPLING_CYCLES = 1
+    # At 250 1 cycle is around 0.78ms
+    SAMPLING_CYCLES = 15
 
     data_log = []
     saved_data = []
@@ -250,7 +252,7 @@ def main():
     
     # Different filenames for the csv file
     timestamp = datetime.datetime.utcnow()
-    name = 'NormalOperation-10min'
+    name = 'NormalOperation-10sA'
     
     path = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensorlog'
     pathTime = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensor1log-{:%d%b,%H.%M}'.format(timestamp)
@@ -338,7 +340,7 @@ def main():
         saved_data = read_csv(samplePath)
         
         # Remove the header, select a portion of data and convert the data to a float32 numpy array for manipulation
-        np_saved_data = np.array(saved_data[2:1802]).astype(np.float32)
+        np_saved_data = np.array(saved_data[2:252]).astype(np.float32)
 
         # Create a copy of the data for FFT
         np_fft_data = np_saved_data.copy()
@@ -352,7 +354,6 @@ def main():
         N = np_fft_data.shape[0]
         # Get the time interval for each sensor
         dt = np_fft_data[[1],[3,7,11,15,19]] - np_fft_data[[0],[3,7,11,15,19]]
-        print(dt)
         # Find the smapling frequency for each sensor
         fs = 1/dt
 
