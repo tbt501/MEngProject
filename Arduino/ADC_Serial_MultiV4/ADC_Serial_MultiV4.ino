@@ -26,10 +26,11 @@ const int sensorInfo[5][3] = { {sensor1x,sensor1y,sensor1z},
 
 bool start = false;
 int serialRX;
+unsigned long timeStart,timeSample;
 
 void setup() {
   
-  Serial.begin(9600);
+  Serial.begin(115200);
   analogReference(EXTERNAL);
   
 }
@@ -43,19 +44,34 @@ void loop() {
         }
      }
   }
-
+  
+  timeStart = millis();
   while(start){
     for(int i=0; i<NO_OF_SENSORS; i++){
+      timeSample = millis()-timeStart;
+      delay(1);
       Serial.print(i+1);
+      delay(1);
       Serial.print(" ");
+      delay(1);
       Serial.print(analogRead(sensorInfo[i][0]));
+      delay(1);
       Serial.print(" ");
+      delay(1);
       Serial.print(analogRead(sensorInfo[i][1]));
+      delay(1);
       Serial.print(" ");
+      delay(1);
       Serial.print(analogRead(sensorInfo[i][2]));
+      delay(1);
       Serial.print(" ");
-      Serial.println();
+      delay(1);
+      Serial.print(timeSample);
       delay(20);
+      Serial.print(" ");
+      delay(1);
+      Serial.println();
+           
       if (Serial.available() > 0){
           serialRX = Serial.read();
           if (serialRX == 'S'){
