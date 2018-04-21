@@ -239,7 +239,8 @@ def main():
     NO_SAMPLES = 250
     NO_SENSORS = 5
     # At 250 1 cycle is around 0.78ms
-    SAMPLING_CYCLES = 15
+    SAMPLING_CYCLES = 2
+    
 
     data_log = []
     saved_data = []
@@ -252,13 +253,13 @@ def main():
     
     # Different filenames for the csv file
     timestamp = datetime.datetime.utcnow()
-    name = 'NormalOperation-10sA'
+    name = 'Sensorlog60Hz'
     
     path = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensorlog'
     pathTime = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/Sensor1log-{:%d%b,%H.%M}'.format(timestamp)
     pathName = '/Users/Angelo555uk/Desktop/University/Year_4/Project/Results/'+name
     
-    savePath = path
+    savePath = pathName
     samplePath = savePath + '.csv'
     
 

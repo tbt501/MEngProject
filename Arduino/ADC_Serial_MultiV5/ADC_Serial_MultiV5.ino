@@ -28,7 +28,7 @@ const int sensorInfo[5][3] = { {sensor1x,sensor1y,sensor1z},
 
 bool start = false;
 int serialRX;
-unsigned int timeStart,timeEnd;
+unsigned long timeStart,timeEnd;
 int sensorVals[NO_OF_SAMPLES][15];
 
 void setup() {
@@ -76,13 +76,14 @@ void loop() {
         Serial.print(" ");
         Serial.print(sensorVals[i][2+(j*3)]);
         Serial.print(" ");
-        delay(4);
+        delay(5);
       }
       Serial.println();
     }
     Serial.print(timeEnd);
     Serial.print(" ");
     Serial.println();
+    delay(2);
     
     if (Serial.available() > 0){
         serialRX = Serial.read();
